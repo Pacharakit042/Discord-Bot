@@ -1,0 +1,10 @@
+# .gitignore
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+
+# Database file
+matches.db
