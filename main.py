@@ -10,7 +10,14 @@ intents = discord.Intents.default()
 bot = discord.Bot(intents=intents)
 
 GAMES_TO_TRACK = ["valorant", "csgo", "lol", "dota2"]
-GAME_EMBED_CONFIG = { "valorant": {"name": "Valorant", "color": 0xFD4556, "icon": "https://i.imgur.com/2c16nHz.png"}, "csgo": {"name": "CS2", "color": 0xFFA500, "icon": "https://i.imgur.com/12USX7b.png"}, "lol": {"name": "League of Legends", "color": 0x00BFFF, "icon": "https://i.imgur.com/xT1201B.png"}, "dota2": {"name": "Dota 2", "color": 0xFF0000, "icon": "https://i.imgur.com/N3a5b29.png"}}
+GAME_EMBED_CONFIG = {
+    "valorant": {"name": "Valorant", "color": 0xFD4556,}, 
+    "csgo": {"name": "CS2", "color": 0xFFA500,}, 
+    "lol": {"name": "League of Legends", "color": 0x00BFFF,}, 
+    "dota2": {"name": "Dota 2", "color": 0xFF0000,}
+}
+
+# --- ฟังก์ชันสร้าง Embed สำหรับแสดงผลตารางแข่ง ---
 def create_schedule_embed(game_slug: str, time_period: str):
     now = datetime.now(timezone.utc); start_date, end_date, period_str = None, None, ""
     if time_period == "today": start_date = now.replace(hour=0, minute=0, second=0, microsecond=0); end_date = start_date + timedelta(days=1); period_str = "วันนี้"
@@ -18,7 +25,7 @@ def create_schedule_embed(game_slug: str, time_period: str):
     elif time_period == "this_week": start_date = now.replace(hour=0, minute=0, second=0, microsecond=0); days_until_sunday = 6 - start_date.weekday(); end_date = (start_date + timedelta(days=days_until_sunday)).replace(hour=23, minute=59, second=59); period_str = "สัปดาห์นี้"
     else: return discord.Embed(title="เกิดข้อผิดพลาด", description="ช่วงเวลาไม่ถูกต้อง")
     matches = database.get_matches_for_day(game_slug, start_date.isoformat(), end_date.isoformat())
-    config = GAME_EMBED_CONFIG[game_slug]; embed = discord.Embed(title=f"📅 ตารางแข่ง {config['name']} ({period_str})", color=config['color'], timestamp=datetime.now()); embed.set_thumbnail(url=config['icon'])
+    config = GAME_EMBED_CONFIG[game_slug]; embed = discord.Embed(title=f"📅 ตารางแข่ง {config['name']} ({period_str})", color=config['color'], timestamp=datetime.now())
     matches_to_display = matches[:7]
     if not matches_to_display: embed.description = f"ไม่พบโปรแกรมการแข่งขันในช่วง{period_str}ครับ"
     else:
@@ -31,8 +38,10 @@ def create_schedule_embed(game_slug: str, time_period: str):
             if i < len(matches_to_display) - 1: embed.add_field(name="", value="-"*50, inline=False)
     footer_text = f"แสดง {len(matches_to_display)} จาก {len(matches)} แมตช์ | ข้อมูลจาก Pandascore" if len(matches) > len(matches_to_display) else "ข้อมูลจาก Pandascore"; embed.set_footer(text=footer_text)
     return embed
+
+# --- ฟังก์ชันสร้าง Embed สำหรับผลการค้นหานักแข่ง ---
 def create_player_schedule_embed(player_data, matches_data):
-    player_name = player_data['name']; embed = discord.Embed(title=f"🔍 ผลการค้นหาแมตช์ของ: {player_name}", description=f"แสดงโปรแกรมการแข่งขันที่กำลังจะมาถึงของ **{player_name}**", color=0x7289DA)
+    player_name = player_data['name']; embed = discord.Embed(title=f"🔍 ผลการค้นหาแมตช์ของ: {player_name}", description=f"โปรแกรมการแข่งขันที่กำลังจะมาถึงของ **{player_name}**", color=0x7289DA)
     if player_data.get('image_url'): embed.set_thumbnail(url=player_data['image_url'])
     if not matches_data: embed.add_field(name="ไม่พบข้อมูล", value=f"ไม่พบโปรแกรมการแข่งขันของ **{player_name}** ในเร็วๆ นี้ครับ", inline=False)
     else:
@@ -53,8 +62,8 @@ def create_team_schedule_embed(team_data, matches_data):
     team_name = team_data['name']
     embed = discord.Embed(
         title=f"🔍 ผลการค้นหาแมตช์ของทีม: {team_name}",
-        description=f"แสดงโปรแกรมการแข่งขันที่กำลังจะมาถึงของทีม **{team_name}**",
-        color=0x99AAB5 # Discord Grayple
+        description=f"โปรแกรมการแข่งขันที่กำลังจะมาถึงของทีม **{team_name}**",
+        color=0x99AAB5
     )
     if team_data.get('image_url'):
         embed.set_thumbnail(url=team_data['image_url'])
@@ -78,7 +87,7 @@ def create_team_schedule_embed(team_data, matches_data):
 
 # --- UI Components ---
 
-# 1. Modals (Pop-ups)
+# Modals
 class PlayerSearchModal(Modal):
     def __init__(self, game_slug: str):
         super().__init__(title=f"ค้นหานักแข่งใน {GAME_EMBED_CONFIG[game_slug]['name']}")
@@ -117,7 +126,7 @@ class TeamSearchModal(Modal):
         await interaction.followup.send(embed=response_embed, ephemeral=True)
 
 
-# 2. เมนูเลือกเกม (ปรับปรุง)
+# เมนูเลือกเกม
 class GameSelect(Select):
     def __init__(self, action: str, time_period: str = None):
         self.action = action
@@ -149,7 +158,7 @@ class TimePeriodSelectView(View):
     @discord.ui.button(label="อาทิตย์นี้", style=discord.ButtonStyle.secondary, emoji="🗓️")
     async def this_week(self, b, i): await self.send_game_select(i, "this_week")
 
-# 3. View หลักของแผงควบคุม (เปิดใช้งานปุ่ม)
+# View หลักของแผงควบคุม
 class MainControlPanelView(View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -166,7 +175,7 @@ class MainControlPanelView(View):
     async def search_team_button(self, button: Button, interaction: discord.Interaction):
         await interaction.response.send_message(view=GameSelectView(action="search_team"), ephemeral=True)
 
-# --- Event, Task, และคำสั่ง /setup (อัปเดตคำอธิบาย) ---
+# --- Event, Task, และคำสั่ง /setup ---
 @bot.event
 async def on_ready(): bot.add_view(MainControlPanelView()); print(f"✅ บอท {bot.user} ออนไลน์แล้ว!"); database.initialize_db(); update_matches_cache.start()
 @tasks.loop(minutes=15)
@@ -183,16 +192,15 @@ async def setup_panel(ctx: discord.ApplicationContext):
     embed = discord.Embed(
         title="Esports Schedule Bot",
         description=(
-            "ยินดีต้อนรับ! บอทสำหรับติดตามข่าวสารและตารางการแข่งขัน Esports\n\n"
+            "บอทสำหรับรับชมตารางการแข่งขัน Esports (Valorant, CS2, LoL, Dota2)\n\n"
             "**วิธีใช้งาน:**\n"
             "🔹 **ดูตารางแข่ง:** กดปุ่ม `ดูตารางแข่ง` แล้วเลือกช่วงเวลาและเกม\n"
-            "🔹 **ค้นหานักแข่ง:** กดปุ่ม `ค้นหานักแข่ง` เพื่อดูตารางแข่งของคนๆ นั้น\n"
-            "🔹 **ค้นหาทีม:** กดปุ่ม `ค้นหาทีม` เพื่อดูตารางแข่งของทีมนั้น\n\n"
+            "🔹 **ค้นหานักแข่ง:** กดปุ่ม `ค้นหานักแข่ง` เพื่อดูตารางแข่งของนักแขข่งที่ต้องการ\n"
+            "🔹 **ค้นหาทีม:** กดปุ่ม `ค้นหาทีม` เพื่อดูตารางแข่งของทีมที่ต้องการ\n\n"
             "ผลลัพธ์ทั้งหมดจะแสดงให้ **คุณเห็นแค่คนเดียว**"
         ),
         color=0x2ECC71
     );
-    embed.set_image(url="https://i.imgur.com/your-banner-image.png");
     embed.set_footer(text="กดปุ่มด้านล่างเพื่อเริ่มใช้งาน");
     await ctx.channel.send(embed=embed, view=MainControlPanelView());
     await ctx.edit(content="✅ สร้างแผงควบคุมเรียบร้อยแล้ว!")
