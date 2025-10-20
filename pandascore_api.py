@@ -4,8 +4,7 @@ from config import PANDASCORE_API_TOKEN
 BASE_URL = "https://api.pandascore.co"
 
 def fetch_upcoming_matches(game_slug):
-
-    #ดึงข้อมูลแมตช์ที่กำลังจะมาถึงของเกมที่ระบุ
+    """ดึงข้อมูลแมตช์ที่กำลังจะมาถึงของเกมที่ระบุ"""
 
     endpoint = f"/{game_slug}/matches/upcoming"
     params = {
@@ -45,7 +44,7 @@ def fetch_team_upcoming_matches(team_id: int):
         "token": PANDASCORE_API_TOKEN,
         "filter[opponent_id]": team_id,
         "sort": "begin_at",
-        "per_page": 5 # ค้นหาแค่ 5 แมตช์ล่าสุด
+        "per_page": 5 # ค้นหาแค่ 5 แมตช์ล่าสุดก็เพียงพอ
     }
     
     try:
