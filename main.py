@@ -33,35 +33,65 @@ def create_schedule_embed(game_slug: str, time_period: str):
     return embed
 
 def create_player_schedule_embed(player_data, matches_data):
-    player_name = player_data['name']; embed = discord.Embed(title=f"🔍 ผลการค้นหาแมตช์ของ: {player_name}", description=f"โปรแกรมการแข่งขันที่กำลังจะมาถึงของ **{player_name}**", color=0x7289DA)
-    if player_data.get('image_url'): embed.set_thumbnail(url=player_data['image_url'])
-    if not matches_data: embed.add_field(name="ไม่พบข้อมูล", value=f"ไม่พบโปรแกรมการแข่งขันของ **{player_name}** ในเร็วๆ นี้ครับ", inline=False)
+    player_name = player_data['name']
+    embed = discord.Embed(
+        title=f"🔍 ผลการค้นหาแมตช์ของ: {player_name}",
+        description=f"โปรแกรมการแข่งขันที่กำลังจะมาถึงของ **{player_name}**",
+        color=0x7289DA
+    )
+    if player_data.get('image_url'):
+        embed.set_thumbnail(url=player_data['image_url'])
+
+    if not matches_data:
+        embed.add_field(name="ไม่พบข้อมูล", value=f"ไม่พบโปรแกรมการแข่งขันของ **{player_name}** ในเร็วๆ นี้ครับ", inline=False)
     else:
         for match in matches_data:
-            team1 = match['opponents'][0]['opponent']['name']; team2 = match['opponents'][1]['opponent']['name']; match_time_utc = datetime.fromisoformat(match['begin_at'].replace('Z', '+00:00'))
+            team1 = match['opponents'][0]['opponent']['name'] if len(match['opponents']) > 0 else "TBD"
+            team2 = match['opponents'][1]['opponent']['name'] if len(match['opponents']) > 1 else "TBD"
+
+            match_time_utc = datetime.fromisoformat(match['begin_at'].replace('Z', '+00:00'))
             time_str = f"{discord.utils.format_dt(match_time_utc, style='f')} ({discord.utils.format_dt(match_time_utc, style='R')})"
+            
             stream_url = "N/A"
             if match.get('streams_list'):
                 for stream in match['streams_list']:
                     if 'twitch' in stream.get('raw_url', ''): stream_url = stream['raw_url']; break
             stream_info = f"📺 [คลิกเพื่อรับชม]({stream_url})" if stream_url != 'N/A' else "📺 *ยังไม่มีลิงก์*"
+
             field_value = f"⚔️ **{team1} vs {team2}**\n⏰ {time_str}\n{stream_info}"
-            embed.add_field(name=f"🏆 **{match['league']['name']}**", value=field_value, inline=False); embed.add_field(name="", value="-"*50, inline=False)
-    embed.set_footer(text=f"ข้อมูล ณ วันที่ {datetime.now().strftime('%d/%m/%Y')}"); return embed
+            embed.add_field(name=f"🏆 **{match['league']['name']}**", value=field_value, inline=False)
+            embed.add_field(name="", value="-"*50, inline=False)
+
+    embed.set_footer(text=f"ข้อมูล ณ วันที่ {datetime.now().strftime('%d/%m/%Y')}")
+    return embed
 
 def create_team_schedule_embed(team_data, matches_data):
-    team_name = team_data['name']; embed = discord.Embed(title=f"🔍 ผลการค้นหาแมตช์ของทีม: {team_name}", description=f"โปรแกรมการแข่งขันที่กำลังจะมาถึงของทีม **{team_name}**", color=0x99AAB5)
-    if team_data.get('image_url'): embed.set_thumbnail(url=team_data['image_url'])
-    if not matches_data: embed.add_field(name="ไม่พบข้อมูล", value=f"ไม่พบโปรแกรมการแข่งขันของทีม **{team_name}** ในเร็วๆ นี้ครับ", inline=False)
+    team_name = team_data['name']
+    embed = discord.Embed(
+        title=f"🔍 ผลการค้นหาแมตช์ของทีม: {team_name}",
+        description=f"โปรแกรมการแข่งขันที่กำลังจะมาถึงของทีม **{team_name}**",
+        color=0x99AAB5 # Discord Grayple
+    )
+    if team_data.get('image_url'):
+        embed.set_thumbnail(url=team_data['image_url'])
+
+    if not matches_data:
+        embed.add_field(name="ไม่พบข้อมูล", value=f"ไม่พบโปรแกรมการแข่งขันของทีม **{team_name}** ในเร็วๆ นี้ครับ", inline=False)
     else:
         for match in matches_data:
-            team1 = match['opponents'][0]['opponent']['name']; team2 = match['opponents'][1]['opponent']['name']; match_time_utc = datetime.fromisoformat(match['begin_at'].replace('Z', '+00:00'))
+            team1 = match['opponents'][0]['opponent']['name'] if len(match['opponents']) > 0 else "TBD"
+            team2 = match['opponents'][1]['opponent']['name'] if len(match['opponents']) > 1 else "TBD"
+
+            match_time_utc = datetime.fromisoformat(match['begin_at'].replace('Z', '+00:00'))
             time_str = f"{discord.utils.format_dt(match_time_utc, style='f')} ({discord.utils.format_dt(match_time_utc, style='R')})"
             stream_url = next((s['raw_url'] for s in match.get('streams_list', []) if 'twitch' in s.get('raw_url', '')), "N/A")
             stream_info = f"📺 [คลิกเพื่อรับชม]({stream_url})" if stream_url != "N/A" else "📺 *ยังไม่มีลิงก์*"
             field_value = f"⚔️ **{team1} vs {team2}**\n⏰ {time_str}\n{stream_info}"
-            embed.add_field(name=f"🏆 **{match['league']['name']}**", value=field_value, inline=False); embed.add_field(name="", value="-"*50, inline=False)
-    embed.set_footer(text=f"ข้อมูล ณ วันที่ {datetime.now().strftime('%d/%m/%Y')}"); return embed
+            embed.add_field(name=f"🏆 **{match['league']['name']}**", value=field_value, inline=False)
+            embed.add_field(name="", value="-"*50, inline=False)
+
+    embed.set_footer(text=f"ข้อมูล ณ วันที่ {datetime.now().strftime('%d/%m/%Y')}")
+    return embed
 
 
 # --- UI Components สำหรับ "เลือก" ผลการค้นหา ---
