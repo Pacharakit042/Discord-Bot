@@ -1,7 +1,7 @@
 # main.py
 import discord
 from discord.ext import tasks, commands
-from discord.ui import View, Button, Select, Modal, TextInput
+from discord.ui import View, Button, Select, Modal, InputText
 from datetime import datetime, timezone, timedelta
 import config, database, pandascore_api
 
@@ -131,7 +131,7 @@ class TeamSelectView(View):
 class PlayerSearchModal(Modal):
     def __init__(self, game_slug: str):
         super().__init__(title=f"ค้นหานักแข่งใน {GAME_EMBED_CONFIG[game_slug]['name']}")
-        self.game_slug = game_slug; self.add_item(TextInput(label="ชื่อนักแข่ง (In-game name)", placeholder="เช่น TenZ, f0rsakeN, s1mple", required=True))
+        self.game_slug = game_slug; self.add_item(InputText(label="ชื่อนักแข่ง (In-game name)", placeholder="เช่น TenZ, f0rsakeN, s1mple", required=True))
 
     async def callback(self, interaction: discord.Interaction):
         player_name = self.children[0].value
@@ -147,7 +147,7 @@ class PlayerSearchModal(Modal):
 class TeamSearchModal(Modal):
     def __init__(self, game_slug: str):
         super().__init__(title=f"ค้นหาทีมใน {GAME_EMBED_CONFIG[game_slug]['name']}")
-        self.game_slug = game_slug; self.add_item(TextInput(label="ชื่อทีม", placeholder="เช่น Paper Rex, Fnatic, T1", required=True))
+        self.game_slug = game_slug; self.add_item(InputText(label="ชื่อทีม", placeholder="เช่น Paper Rex, Fnatic, T1", required=True))
 
     async def callback(self, interaction: discord.Interaction):
         team_name = self.children[0].value
