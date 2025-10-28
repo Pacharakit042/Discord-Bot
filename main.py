@@ -9,8 +9,12 @@ import config, database, pandascore_api
 intents = discord.Intents.default()
 bot = discord.Bot(intents=intents)
 GAMES_TO_TRACK = ["valorant", "csgo", "lol", "dota2"]
-GAME_EMBED_CONFIG = { "valorant": {"name": "Valorant", "color": 0xFD4556}, "csgo": {"name": "CS2", "color": 0xFFA500}, "lol": {"name": "League of Legends", "color": 0x00BFFF}, "dota2": {"name": "Dota 2", "color": 0xFF0000}}
+GAME_EMBED_CONFIG = { "valorant": {"name": "Valorant", "color": 0xFD4556}, 
+                     "csgo": {"name": "CS2", "color": 0xFFA500}, 
+                     "lol": {"name": "League of Legends", "color": 0x00BFFF}, 
+                     "dota2": {"name": "Dota 2", "color": 0xFF0000}}
 
+# แสดงผลการค้นหาตารางแข่ง
 def create_schedule_embed(game_slug: str, time_period: str):
     now = datetime.now(timezone.utc); start_date, end_date, period_str = None, None, ""
     if time_period == "today": start_date = now.replace(hour=0, minute=0, second=0, microsecond=0); end_date = start_date + timedelta(days=1); period_str = "วันนี้"
@@ -32,6 +36,7 @@ def create_schedule_embed(game_slug: str, time_period: str):
     footer_text = f"แสดง {len(matches_to_display)} จาก {len(matches)} แมตช์ | ข้อมูลจาก Pandascore" if len(matches) > len(matches_to_display) else "ข้อมูลจาก Pandascore"; embed.set_footer(text=footer_text)
     return embed
 
+# แสดงผลการค้นหานักแข่ง
 def create_player_schedule_embed(player_data, matches_data):
     player_name = player_data['name']
     embed = discord.Embed(
@@ -65,6 +70,7 @@ def create_player_schedule_embed(player_data, matches_data):
     embed.set_footer(text=f"ข้อมูล ณ วันที่ {datetime.now().strftime('%d/%m/%Y')}")
     return embed
 
+# แสดงผลค้นหาทีม
 def create_team_schedule_embed(team_data, matches_data):
     team_name = team_data['name']
     embed = discord.Embed(
@@ -155,13 +161,15 @@ class TeamSelectView(View):
         self.add_item(TeamSelect(teams))
 
 
-# --- UI Components เดิม ---
+# --- UI Components ---
 
-# 1. Modals (Pop-ups)
+# Modals (Pop-ups)
+
+# กรอกชื่อนักแข่ง
 class PlayerSearchModal(Modal):
     def __init__(self, game_slug: str):
         super().__init__(title=f"ค้นหานักแข่งใน {GAME_EMBED_CONFIG[game_slug]['name']}")
-        self.game_slug = game_slug; self.add_item(InputText(label="ชื่อนักแข่ง (In-game name)", placeholder="เช่น TenZ, f0rsakeN, s1mple", required=True))
+        self.game_slug = game_slug; self.add_item(InputText(label="ชื่อนักแข่ง (In-game name)", placeholder="เช่น Faker, f0rsakeN, m0NESY", required=True))
 
     async def callback(self, interaction: discord.Interaction):
         player_name = self.children[0].value
@@ -173,7 +181,7 @@ class PlayerSearchModal(Modal):
             return
         await interaction.followup.send("ผลการค้นหา:", view=PlayerSelectView(players_found), ephemeral=True)
 
-
+# กรอกชื่อทีม
 class TeamSearchModal(Modal):
     def __init__(self, game_slug: str):
         super().__init__(title=f"ค้นหาทีมใน {GAME_EMBED_CONFIG[game_slug]['name']}")
@@ -190,7 +198,7 @@ class TeamSearchModal(Modal):
         await interaction.followup.send("ผลการค้นหา:", view=TeamSelectView(teams_found), ephemeral=True)
 
 
-# 2. เมนูเลือกเกม
+# เมนูเลือกเกม
 class GameSelect(Select):
     def __init__(self, action: str, time_period: str = None):
         self.action = action; self.time_period = time_period
@@ -221,7 +229,7 @@ class TimePeriodSelectView(View):
     @discord.ui.button(label="อาทิตย์นี้", style=discord.ButtonStyle.secondary, emoji="🗓️")
     async def this_week(self, b, i): await self.send_game_select(i, "this_week")
 
-# 3. View หลักของแผงควบคุม
+# View หลักของแผงควบคุม
 class MainControlPanelView(View):
     def __init__(self): super().__init__(timeout=None)
     @discord.ui.button(label="ดูตารางแข่ง", style=discord.ButtonStyle.green, custom_id="persistent_view:schedule", emoji="📅")
